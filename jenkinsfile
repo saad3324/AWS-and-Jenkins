@@ -1,0 +1,58 @@
+#!/usr/bin/env groovy
+library identifier: 'jenkins-shared-library@AWS-Practice', retriever: modernSCM(
+    [$class: 'GitSCMSource',
+    remote: 'https://gitlab.com/saad324/jenkins-shared-library.git',
+    credentialsId: 'saad-git'
+    ]
+)
+
+def gv
+
+pipeline {
+    agent any
+
+     stages {
+        stage("init") {
+            steps {
+                script {
+                    gv = load "script.groovy"
+                }
+            }
+        }
+        
+        stage("build app") {
+            steps {
+                script {
+                    buildApp()
+                }
+            }
+        }
+
+        stage("build and push image") {
+            steps {
+                script {
+
+                    buildImage 'saad324/saad-docker:1.1.0'
+                    dockerLogin()
+                    dockerPush 'saad324/saad-docker:1.1.0'
+                }
+            }
+        }
+        stage("test") {
+            steps {
+                script {
+                    gv.testApp()
+
+                }
+            }
+        }
+        stage("deploy") {
+            steps {
+                script {
+                    gv.deployApp()
+                }
+            }
+        }
+
+    }
+}
